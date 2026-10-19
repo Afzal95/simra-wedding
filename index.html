@@ -1413,6 +1413,39 @@
     .gate-cta,.gate-cta::after,.gc-spark,.door-intro.charging .heaven-door.left,.door-intro.charging .heaven-door.right,.door-intro.charging .door-seam{animation:none!important}
   }
 
+
+
+
+
+
+  /* Sober tap feedback: a soft ripple and a few tiny hearts where the visitor taps */
+  .tap-ripple{position:fixed;z-index:55;pointer-events:none;width:46px;height:46px;border:1.5px solid #e8728f;border-radius:50%}
+  .tap-spark{position:fixed;z-index:55;pointer-events:none;line-height:1;font-style:normal}
+
+
+
+  /* "Open Your Invitation" button: fits every phone width and looks a little richer */
+  .gate-cta{
+    gap:8px;padding:12px clamp(16px,5vw,26px) 13px;
+    font-size:clamp(12.5px,4vw,16px);letter-spacing:.13em;
+    border:2px solid rgba(255,255,255,.95);
+    background:
+      linear-gradient(180deg,rgba(255,255,255,.32),rgba(255,255,255,0) 55%),
+      linear-gradient(145deg,#ff9fbd,#e8528f 58%,#c43d7a);
+    box-shadow:
+      0 10px 24px rgba(196,61,122,.45),
+      0 0 0 5px rgba(255,255,255,.2),
+      0 0 0 9px rgba(255,159,189,.16),
+      inset 0 -3px 0 rgba(120,20,60,.18),
+      inset 0 1px 0 rgba(255,255,255,.6);
+    animation:ctaBreathe 2.2s ease-in-out infinite;
+  }
+  .gate-cta .gc-spark{font-size:.85em}
+  @keyframes ctaBreathe{
+    0%,100%{scale:1;box-shadow:0 10px 24px rgba(196,61,122,.45),0 0 0 5px rgba(255,255,255,.2),0 0 0 9px rgba(255,159,189,.16),inset 0 -3px 0 rgba(120,20,60,.18),inset 0 1px 0 rgba(255,255,255,.6)}
+    50%{scale:1.045;box-shadow:0 12px 30px rgba(196,61,122,.6),0 0 0 7px rgba(255,255,255,.26),0 0 0 14px rgba(255,159,189,.14),inset 0 -3px 0 rgba(120,20,60,.18),inset 0 1px 0 rgba(255,255,255,.6)}
+  }
+
 </style>
 </head>
 <body>
@@ -1843,6 +1876,17 @@
   }
   icon.addEventListener('click',release);
   icon.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();release();}});
+  // play it once by itself when the visitor reaches this section
+  if(window.IntersectionObserver){
+    let played=false, wait=null;
+    new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting&&e.intersectionRatio>=.6){
+          if(!played&&!wait) wait=setTimeout(function(){ wait=null; played=true; release(); },900);
+        }else{ clearTimeout(wait); wait=null; }
+      });
+    },{root:document.getElementById('app'),threshold:[0,.6]}).observe(page);
+  }
 })();
 
 (function(){
@@ -1878,6 +1922,17 @@
   }
   icon.addEventListener('click',release);
   icon.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();release();}});
+  // play it once by itself when the visitor reaches this section
+  if(window.IntersectionObserver){
+    let played=false, wait=null;
+    new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting&&e.intersectionRatio>=.6){
+          if(!played&&!wait) wait=setTimeout(function(){ wait=null; played=true; release(); },900);
+        }else{ clearTimeout(wait); wait=null; }
+      });
+    },{root:document.getElementById('app'),threshold:[0,.6]}).observe(page);
+  }
 })();
 
 (function(){
@@ -1947,7 +2002,7 @@
   // one-time hint that the volume can be changed (disappears on its own, or on the first tap)
   let tipShown=false, tipT=null;
   function hideTip(){ clearTimeout(tipT); wrap.classList.remove('tip'); }
-  function showTip(){ wrap.classList.add('tip'); tipT=setTimeout(hideTip,7000); }
+  function showTip(){ wrap.classList.add('tip'); tipT=setTimeout(hideTip,4500); }
   document.addEventListener('pointerdown',function(){ if(tipShown) hideTip(); });
   function reveal(){
     if(!app.classList.contains('scroll-locked')){
@@ -1993,6 +2048,38 @@
   }
   nudge('haldiFlower','tt-haldi');
   nudge('nikahHeart','tt-nikah');
+})();
+
+(function(){
+  // Very light feedback on any tap: a faint ripple and three tiny hearts that drift up and fade.
+  if(!document.body.animate) return;
+  const rnd=function(a,b){return a+Math.random()*(b-a);};
+  const skip='.door-intro,.vol,.kid-chip,#haldiFlower,#nikahHeart';   // these have their own animation
+  let live=0;
+  document.addEventListener('click',function(e){
+    if(window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const t=e.target; if(!t||!t.closest||t.closest(skip)) return;
+    const x=e.clientX, y=e.clientY; if(!x&&!y) return;              // keyboard "clicks" have no position
+    if(live>9) return;
+    const warm=!!t.closest('.haldi-page');
+    const color=warm?'#e0a020':'#e8728f', glyph=warm?'\u273F':'\u2665';
+    const ring=document.createElement('i'); ring.className='tap-ripple';
+    ring.style.left=x+'px'; ring.style.top=y+'px'; ring.style.borderColor=color;
+    document.body.appendChild(ring); live++;
+    ring.animate([
+      {transform:'translate(-50%,-50%) scale(.3)',opacity:.5},
+      {transform:'translate(-50%,-50%) scale(1.5)',opacity:0}
+    ],{duration:650,easing:'ease-out'}).onfinish=function(){ ring.remove(); live--; };
+    for(let i=0;i<3;i++){
+      const h=document.createElement('i'); h.className='tap-spark'; h.textContent=glyph;
+      h.style.left=x+'px'; h.style.top=y+'px'; h.style.color=color; h.style.fontSize=rnd(9,13)+'px';
+      document.body.appendChild(h); live++;
+      h.animate([
+        {transform:'translate(-50%,-50%) translate(0,0) scale(.6)',opacity:.85},
+        {transform:'translate(-50%,-50%) translate('+rnd(-18,18)+'px,'+(-rnd(26,46))+'px) scale(1)',opacity:0}
+      ],{duration:rnd(800,1000),delay:i*90,easing:'ease-out',fill:'backwards'}).onfinish=function(){ h.remove(); live--; };
+    }
+  });
 })();
 
 (function(){
